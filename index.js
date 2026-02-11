@@ -16,6 +16,10 @@ const {
 const path = require('path');
 require('dotenv').config();
 
+const ffmpeg = require('ffmpeg-static');
+process.env.FFMPEG_PATH = ffmpeg; 
+console.log('--- 系統啟動：已自動定位 FFmpeg 路徑 ---');
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -28,11 +32,19 @@ const client = new Client({
 const SONG_PATH = path.join(__dirname, 'gong-xi-fa-cai.mp3');
 
 function playSong(player) {
-    const resource = createAudioResource(SONG_PATH);
-    player.play(resource);
-    console.log('正在播放：恭喜發財');
-}
+    console.log('--- 嘗試讀取路徑 ---:', SONG_PATH); // 偵測點 1
+    const resource = createAudioResource(SONG_PATH, {
+        inlineVolume: true
+    });
+    
+    resource.playStream.on('error', error => {
+        console.error('--- 資源流錯誤 ---:', error.message); // 偵測點 2
+    });
 
+    resource.volume.setVolume(1.0);
+    player.play(resource);
+    console.log('--- 核心日誌：指令已發送到播放器 ---');
+}
 // 核心功能：加入特定頻道
 async function connectToChannel(channel) {
     const connection = joinVoiceChannel({
